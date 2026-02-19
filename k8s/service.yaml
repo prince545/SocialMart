@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: socialmart-server
+spec:
+  selector:
+    app: socialmart-server
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: socialmart-client
+spec:
+  selector:
+    app: socialmart-client
+  ports:
+    - protocol: TCP
+      port: 5173
+      targetPort: 5173
+  type: LoadBalancer # Or ClusterIP if using Ingress
+  # For localhost testing with Minikube, LoadBalancer usually requires `minikube tunnel`
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+spec:
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+  clusterIP: None # Headless service for StatefulSet
