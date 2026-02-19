@@ -1,2 +1,41 @@
-node_modules
+# --- System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Dependencies ---
+# Covers both client and server folders
+**/node_modules/
+**/dist/
+**/build/
+.npm
+.eslintcache
+
+# --- Environment / Secrets (CRITICAL) ---
 .env
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+**/.env
+# Don't ignore .env.example if you have one
+
+# --- Docker & Kubernetes ---
+.dockerignore
+# Ignore local k3s/minikube configs if generated locally
+.kube/
+# If you use helm
+/charts/*/charts/
+/charts/*/tmp/
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
