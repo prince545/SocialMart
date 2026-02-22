@@ -30,12 +30,15 @@ const Home = () => {
     return (
         <div className="bg-white">
             {/* Hero Section */}
-            <section className="relative bg-indigo-900 overflow-hidden">
-                <div className="absolute inset-0">
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-900 to-purple-800 opacity-90"></div>
-                </div>
-
-                <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-1/2 bg-indigo-800 transform skew-x-12 translate-x-32 opacity-20"></div>
+            <section className="relative overflow-hidden">
+                {/* Banner image */}
+                <img
+                    src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&q=85"
+                    alt="Shopping banner"
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                />
+                {/* Dark overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/30"></div>
 
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
                     <div className="md:w-2/3 lg:w-1/2">
