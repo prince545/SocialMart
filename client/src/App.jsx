@@ -42,7 +42,7 @@ function App() {
 
     return (
         <Router>
-            <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
+            <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
                 <Navbar />
                 <main className="flex-grow">
                     <Suspense fallback={<Loading />}>
