@@ -1,5 +1,6 @@
 
 const Product = require('../models/Product');
+const User = require('../models/User');
 
 // @route   GET api/products
 // @desc    Get all products with search and filter
@@ -16,6 +17,7 @@ exports.getProducts = async (req, res) => {
             : {};
 
         const category = req.query.category ? { category: req.query.category } : {};
+        const subcategory = req.query.subcategory ? { subcategory: req.query.subcategory } : {};
 
         // Price Filter (e.g. min=10&max=100)
         let price = {};
@@ -25,16 +27,32 @@ exports.getProducts = async (req, res) => {
             if (req.query.maxPrice) price.price.$lte = Number(req.query.maxPrice);
         }
 
-        // If getting my products (dashboard)
-        const userFilter = req.query.user ? { user: req.query.user } : {};
+        // User filter — support both Clerk string IDs and MongoDB ObjectIds
+        let userFilter = {};
+        if (req.query.user) {
+            const rawUser = req.query.user;
+            if (rawUser.startsWith('user_')) {
+                // Clerk ID — resolve to MongoDB _id
+                const dbUser = await User.findOne({ clerkId: rawUser }).select('_id');
+                if (dbUser) {
+                    userFilter = { user: dbUser._id };
+                } else {
+                    // No matching user found — return empty result
+                    return res.json([]);
+                }
+            } else {
+                userFilter = { user: rawUser };
+            }
+        }
 
-        const products = await Product.find({ ...keyword, ...category, ...price, ...userFilter }).populate('user', 'username avatar');
+        const products = await Product.find({ ...keyword, ...category, ...subcategory, ...price, ...userFilter }).populate('user', 'username avatar');
         res.json(products);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
     }
 };
+
 
 // @route   GET api/products/:id
 // @desc    Get product by ID

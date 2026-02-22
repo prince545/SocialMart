@@ -4,8 +4,26 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProductDetails, createProductReview } from '../redux/productSlice';
 import { addToCart } from '../redux/cartSlice';
-import { ArrowLeft, ShoppingCart, Star, Share2, X, Sparkles, Loader } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Star, Share2, Sparkles, Loader } from 'lucide-react';
 import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 const ProductDetails = () => {
     const { id } = useParams();
@@ -16,6 +34,8 @@ const ProductDetails = () => {
     const [showSocialModal, setShowSocialModal] = useState(false);
     const [generatedPost, setGeneratedPost] = useState('');
     const [generatingPost, setGeneratingPost] = useState(false);
+    const [reviewRating, setReviewRating] = useState('5');
+    const [reviewComment, setReviewComment] = useState('');
 
     useEffect(() => {
         dispatch(getProductDetails(id));
@@ -40,20 +60,28 @@ const ProductDetails = () => {
         }
     };
 
+    const handleSubmitReview = (e) => {
+        e.preventDefault();
+        dispatch(createProductReview({ productId: id, reviewData: { rating: reviewRating, comment: reviewComment } }));
+        setReviewComment('');
+    };
+
     if (loading) return <div className="text-center py-10">Loading...</div>;
     if (error) return <div className="text-center py-10 text-red-500">Error: {error.msg || 'Product not found'}</div>;
     if (!product) return null;
 
     return (
         <div className="max-w-7xl mx-auto py-8 px-4">
-            <Link to="/marketplace" className="inline-flex items-center text-gray-500 hover:text-blue-600 mb-6">
-                <ArrowLeft size={20} className="mr-2" />
-                Back to Marketplace
-            </Link>
+            <Button asChild variant="ghost" className="mb-6 text-gray-500 hover:text-indigo-600 -ml-2">
+                <Link to="/marketplace">
+                    <ArrowLeft size={18} className="mr-2" />
+                    Back to Marketplace
+                </Link>
+            </Button>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Image Section */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center justify-center">
                     <img
                         src={product.images?.[0] || 'https://via.placeholder.com/500'}
                         alt={product.title}
@@ -62,11 +90,13 @@ const ProductDetails = () => {
                 </div>
 
                 {/* Details Section */}
-                <div>
-                    <div className="mb-4">
-                        <span className="text-sm text-blue-600 font-semibold uppercase tracking-wider">{product.brand}</span>
-                        <h1 className="text-3xl font-bold text-gray-900 mt-1 mb-2">{product.title}</h1>
-                        <div className="flex items-center space-x-2 mb-4">
+                <div className="space-y-4">
+                    <div>
+                        <Badge variant="secondary" className="text-indigo-600 bg-indigo-50 border-indigo-100 mb-2">
+                            {product.brand}
+                        </Badge>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.title}</h1>
+                        <div className="flex items-center gap-2 mb-3">
                             <div className="flex text-yellow-400">
                                 {[...Array(5)].map((_, i) => (
                                     <Star key={i} size={16} fill={i < Math.floor(product.averageRating || 0) ? "currentColor" : "none"} className={i < Math.floor(product.averageRating || 0) ? "" : "text-gray-300"} />
@@ -77,63 +107,64 @@ const ProductDetails = () => {
                         <p className="text-3xl font-bold text-gray-900">${product.price}</p>
                     </div>
 
-                    <div className="prose prose-blue text-gray-600 mb-6">
-                        <p>{product.description}</p>
-                    </div>
+                    <p className="text-gray-600 leading-relaxed">{product.description}</p>
 
-                    <div className="border-t border-gray-200 py-6">
-                        <div className="flex items-center justify-between mb-4">
+                    <Separator />
+
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
                             <span className="font-semibold text-gray-700">Status:</span>
-                            <span className={product.stock > 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                            <Badge variant={product.stock > 0 ? 'secondary' : 'destructive'}
+                                className={product.stock > 0 ? 'bg-green-100 text-green-800 border-green-200' : ''}>
                                 {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-                            </span>
+                            </Badge>
                         </div>
 
                         {product.stock > 0 && (
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center justify-between">
                                 <span className="font-semibold text-gray-700">Quantity:</span>
-                                <select
-                                    value={qty}
-                                    onChange={(e) => setQty(Number(e.target.value))}
-                                    className="border border-gray-300 rounded p-2"
-                                >
-                                    {[...Array(product.stock).keys()].map((x) => (
-                                        <option key={x + 1} value={x + 1}>
-                                            {x + 1}
-                                        </option>
-                                    ))}
-                                </select>
+                                <Select value={String(qty)} onValueChange={(v) => setQty(Number(v))}>
+                                    <SelectTrigger className="w-28">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {[...Array(product.stock).keys()].map((x) => (
+                                            <SelectItem key={x + 1} value={String(x + 1)}>{x + 1}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         )}
+                    </div>
 
-                        <div className="flex gap-4">
-                            <button
-                                onClick={handleAddToCart}
-                                className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={product.stock === 0}
-                            >
-                                <ShoppingCart size={20} />
-                                <span>Add to Cart</span>
-                            </button>
-                            <button
-                                onClick={() => handleGenerateSocialPost()}
-                                className="flex-1 bg-purple-100 text-purple-700 py-3 px-6 rounded-xl font-semibold hover:bg-purple-200 transition-colors flex items-center justify-center space-x-2"
-                            >
-                                <Share2 size={20} />
-                                <span>Create Ad</span>
-                            </button>
-                        </div>
+                    <div className="flex gap-3 pt-2">
+                        <Button
+                            onClick={handleAddToCart}
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 h-12 gap-2 text-base"
+                            disabled={product.stock === 0}
+                        >
+                            <ShoppingCart size={18} />
+                            Add to Cart
+                        </Button>
+                        <Button
+                            onClick={handleGenerateSocialPost}
+                            variant="secondary"
+                            className="flex-1 bg-purple-100 text-purple-700 hover:bg-purple-200 h-12 gap-2 text-base"
+                        >
+                            <Share2 size={18} />
+                            Create Ad
+                        </Button>
                     </div>
                 </div>
 
-                {/* Reviews Section */}
-                <div className="mt-16">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-8">Customer Reviews</h3>
+                {/* Reviews Section - full width */}
+                <div className="md:col-span-2 mt-8">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-6">Customer Reviews</h3>
                     {product.ratings.length === 0 && <p className="text-gray-500 mb-4">No reviews yet.</p>}
 
                     <div className="space-y-4 mb-8">
                         {product.ratings.map((review, index) => (
-                            <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                            <div key={index} className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="font-semibold text-gray-900">{review.name}</span>
                                     <div className="flex text-yellow-400">
@@ -148,82 +179,85 @@ const ProductDetails = () => {
                         ))}
                     </div>
 
-                    <div className="bg-gray-50 p-6 rounded-xl">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Write a Customer Review</h3>
-                        <form onSubmit={(e) => {
-                            e.preventDefault();
-                            const rating = e.target.rating.value;
-                            const comment = e.target.comment.value;
-                            dispatch(createProductReview({ productId: id, reviewData: { rating, comment } }));
-                            // We should probably clear form or show success message, but for now simple alert
-                            // Also need to handle error if moderation fails
-                        }}>
-                            <div className="mb-4">
-                                <label className="block text-gray-700 mb-2">Rating</label>
-                                <select name="rating" className="w-full border p-2 rounded-lg" required>
-                                    <option value="5">5 - Excellent</option>
-                                    <option value="4">4 - Very Good</option>
-                                    <option value="3">3 - Good</option>
-                                    <option value="2">2 - Fair</option>
-                                    <option value="1">1 - Poor</option>
-                                </select>
+                    <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Write a Review</h3>
+                        <form onSubmit={handleSubmitReview} className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="rating">Rating</Label>
+                                <Select value={reviewRating} onValueChange={setReviewRating}>
+                                    <SelectTrigger id="rating" className="w-48 bg-white">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="5">5 - Excellent</SelectItem>
+                                        <SelectItem value="4">4 - Very Good</SelectItem>
+                                        <SelectItem value="3">3 - Good</SelectItem>
+                                        <SelectItem value="2">2 - Fair</SelectItem>
+                                        <SelectItem value="1">1 - Poor</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <div className="mb-4">
-                                <label className="block text-gray-700 mb-2">Comment</label>
-                                <textarea name="comment" className="w-full border p-2 rounded-lg" rows="3" required></textarea>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="comment">Comment</Label>
+                                <Textarea
+                                    id="comment"
+                                    className="bg-white"
+                                    rows={3}
+                                    value={reviewComment}
+                                    onChange={e => setReviewComment(e.target.value)}
+                                    required
+                                    placeholder="Share your thoughts about this product..."
+                                />
                             </div>
-                            <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 font-medium">
+                            <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">
                                 Submit Review
-                            </button>
+                            </Button>
                         </form>
                     </div>
                 </div>
             </div>
 
-            {/* Social Post Modal */}
-            {showSocialModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 relative">
-                        <button onClick={() => setShowSocialModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                            <X size={24} />
-                        </button>
-                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <Sparkles className="text-purple-600" />
+            {/* Social Post Dialog */}
+            <Dialog open={showSocialModal} onOpenChange={setShowSocialModal}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Sparkles className="text-purple-600 w-5 h-5" />
                             AI Social Post Generator
-                        </h3>
+                        </DialogTitle>
+                    </DialogHeader>
 
-                        {generatingPost ? (
-                            <div className="flex flex-col items-center py-8">
-                                <Loader className="animate-spin text-purple-600 mb-2" size={32} />
-                                <p className="text-gray-500">Writing your perfect ad...</p>
+                    {generatingPost ? (
+                        <div className="flex flex-col items-center py-8">
+                            <Loader className="animate-spin text-purple-600 mb-2" size={32} />
+                            <p className="text-gray-500">Writing your perfect ad...</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                <p className="text-gray-800 whitespace-pre-wrap">{generatedPost}</p>
                             </div>
-                        ) : (
-                            <>
-                                <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
-                                    <p className="text-gray-800 whitespace-pre-wrap">{generatedPost}</p>
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(generatedPost);
-                                            alert("Copied to clipboard!");
-                                        }}
-                                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 font-medium"
-                                    >
-                                        Copy Text
-                                    </button>
-                                    <button
-                                        onClick={handleGenerateSocialPost}
-                                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-medium"
-                                    >
-                                        Regenerate
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(generatedPost);
+                                        alert("Copied to clipboard!");
+                                    }}
+                                >
+                                    Copy Text
+                                </Button>
+                                <Button
+                                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                                    onClick={handleGenerateSocialPost}
+                                >
+                                    Regenerate
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

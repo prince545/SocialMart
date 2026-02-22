@@ -2,9 +2,13 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addLike, addComment } from '../redux/postSlice';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, Tag } from 'lucide-react';
-
+import { Heart, MessageCircle, Share2, MoreHorizontal, Tag } from 'lucide-react';
 import { useUser } from '@clerk/clerk-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 const PostCard = ({ post }) => {
     const dispatch = useDispatch();
@@ -25,25 +29,24 @@ const PostCard = ({ post }) => {
     const isLiked = post.likes.some(like => like.user === clerkUser?.id);
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden transition-all hover:shadow-md">
+        <Card className="overflow-hidden border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
             {/* Header */}
             <div className="flex items-center justify-between p-4">
                 <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white overflow-hidden shadow-sm">
-                        {post.avatar ? (
-                            <img src={post.avatar} alt="avatar" className="w-full h-full object-cover" />
-                        ) : (
-                            <span className="text-lg font-bold uppercase">{post.name?.charAt(0)}</span>
-                        )}
-                    </div>
+                    <Avatar className="w-10 h-10 ring-2 ring-indigo-100">
+                        <AvatarImage src={post.avatar} alt={post.name} />
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-base">
+                            {post.name?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
                     <div>
-                        <h3 className="font-semibold text-gray-900 leading-tight">{post.name}</h3>
+                        <h3 className="font-semibold text-gray-900 leading-tight text-sm">{post.name}</h3>
                         <p className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</p>
                     </div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-50 transition-colors">
-                    <MoreHorizontal size={20} />
-                </button>
+                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600 w-8 h-8">
+                    <MoreHorizontal size={18} />
+                </Button>
             </div>
 
             {/* Image */}
@@ -56,93 +59,100 @@ const PostCard = ({ post }) => {
                 />
             </div>
 
-            {/* Actions */}
-            <div className="p-4 pb-2">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                        <button
-                            onClick={handleLike}
-                            className={`flex items-center space-x-1 transition-transform active:scale-95 ${isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
-                                }`}
-                        >
-                            <Heart size={24} fill={isLiked ? "currentColor" : "none"} />
-                        </button>
-                        <button
-                            onClick={() => setShowComments(!showComments)}
-                            className="flex items-center space-x-1 text-gray-600 hover:text-blue-500 transition-colors"
-                        >
-                            <MessageCircle size={24} />
-                        </button>
-                        <button className="flex items-center space-x-1 text-gray-600 hover:text-green-500 transition-colors">
-                            <Share2 size={24} />
-                        </button>
-                    </div>
+            <CardContent className="p-4 pb-2">
+                {/* Actions */}
+                <div className="flex items-center gap-3 mb-3">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`w-9 h-9 rounded-full transition-transform active:scale-90 ${isLiked ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-600 hover:text-red-500 hover:bg-red-50'}`}
+                        onClick={handleLike}
+                    >
+                        <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-9 h-9 rounded-full text-gray-600 hover:text-indigo-500 hover:bg-indigo-50"
+                        onClick={() => setShowComments(!showComments)}
+                    >
+                        <MessageCircle size={20} />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-9 h-9 rounded-full text-gray-600 hover:text-green-500 hover:bg-green-50"
+                    >
+                        <Share2 size={20} />
+                    </Button>
                 </div>
 
-                {/* Likes Count */}
-                <div className="font-semibold text-sm mb-2 text-gray-900">
+                {/* Likes */}
+                <p className="font-semibold text-sm mb-2 text-gray-900">
                     {post.likes.length > 0 ? `${post.likes.length} likes` : 'Be the first to like'}
-                </div>
+                </p>
 
                 {/* Caption */}
-                <div className="mb-2">
+                <div className="mb-2 text-sm">
                     <span className="font-semibold mr-2 text-gray-900">{post.name}</span>
                     <span className="text-gray-700 leading-relaxed">{post.caption}</span>
                 </div>
 
                 {/* Tagged Products */}
                 {post.products && post.products.length > 0 && (
-                    <div className="mb-3 flex flex-wrap gap-2 mt-3">
+                    <div className="mb-3 flex flex-wrap gap-2 mt-2">
                         {post.products.map((product, index) => (
-                            <div key={product._id || index} className="flex items-center bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors cursor-pointer group border border-blue-100">
-                                <Tag size={12} className="mr-1.5" />
-                                <span className="group-hover:underline">{product.title}</span>
-                                <span className="font-bold ml-1.5 bg-white px-1 rounded text-blue-800">${product.price}</span>
-                            </div>
+                            <Badge key={product._id || index} variant="secondary" className="bg-indigo-50 text-indigo-700 border border-indigo-100 gap-1.5 cursor-pointer hover:bg-indigo-100 transition-colors">
+                                <Tag size={10} />
+                                {product.title}
+                                <span className="font-bold bg-white px-1 rounded text-indigo-800 text-xs">${product.price}</span>
+                            </Badge>
                         ))}
                     </div>
                 )}
 
-                {/* Comments Section */}
+                {/* Toggle comments */}
                 {post.comments.length > 0 && (
                     <button
                         onClick={() => setShowComments(!showComments)}
-                        className="text-gray-500 text-sm mb-2 cursor-pointer hover:text-gray-700"
+                        className="text-gray-400 text-xs mb-2 hover:text-gray-600 transition-colors"
                     >
-                        View all {post.comments.length} comments
+                        {showComments ? 'Hide' : `View all ${post.comments.length}`} comments
                     </button>
                 )}
 
                 {showComments && (
-                    <div className="mt-3 space-y-3 mb-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="mt-2 space-y-2 mb-3 max-h-48 overflow-y-auto">
                         {post.comments.map((comment, index) => (
-                            <div key={comment._id || index} className="flex items-start space-x-2 text-sm">
+                            <div key={comment._id || index} className="flex items-start gap-2 text-sm">
                                 <span className="font-semibold text-gray-900">{comment.name}</span>
-                                <span className="text-gray-700">{comment.text}</span>
+                                <span className="text-gray-600">{comment.text}</span>
                             </div>
                         ))}
                     </div>
                 )}
-            </div>
+            </CardContent>
 
             {/* Add Comment */}
-            <form onSubmit={handleComment} className="border-t border-gray-100 p-3 flex items-center bg-gray-50">
-                <input
+            <form onSubmit={handleComment} className="border-t border-gray-100 px-4 py-2 flex items-center gap-2 bg-gray-50/50">
+                <Input
                     type="text"
                     placeholder="Add a comment..."
-                    className="flex-1 bg-transparent outline-none text-sm px-2 py-1 placeholder-gray-500"
+                    className="flex-1 border-0 bg-transparent focus-visible:ring-0 text-sm px-0 placeholder-gray-400 h-8"
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                 />
-                <button
+                <Button
                     type="submit"
+                    variant="ghost"
+                    size="sm"
                     disabled={!commentText.trim()}
-                    className="text-blue-600 font-semibold text-sm disabled:opacity-50 hover:text-blue-700 transition-colors px-2"
+                    className="text-indigo-600 font-semibold text-sm disabled:opacity-40 px-2 h-7"
                 >
                     Post
-                </button>
+                </Button>
             </form>
-        </div>
+        </Card>
     );
 };
 

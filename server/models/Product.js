@@ -48,6 +48,11 @@ const ProductSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    subcategory: {
+        type: String,
+        default: '',
+        index: true
+    },
     price: {
         type: Number,
         required: true,

@@ -1,11 +1,14 @@
-
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProducts, deleteProduct } from '../redux/productSlice';
-import { Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2, Edit, Package, DollarSign, ShoppingBag } from 'lucide-react';
 import ProductForm from '../components/ProductForm';
-
 import { useUser } from '@clerk/clerk-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 const Dashboard = () => {
     const dispatch = useDispatch();
@@ -14,94 +17,103 @@ const Dashboard = () => {
     const [showForm, setShowForm] = useState(false);
 
     useEffect(() => {
-        if (clerkUser) {
-            // Fetch only my products
-            dispatch(getProducts({ user: clerkUser.id }));
-        }
+        if (clerkUser) dispatch(getProducts({ user: clerkUser.id }));
     }, [dispatch, clerkUser]);
 
     const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this product?')) {
-            dispatch(deleteProduct(id));
-        }
+        if (window.confirm('Are you sure you want to delete this product?')) dispatch(deleteProduct(id));
     };
 
-    if (!isLoaded) return <div className="text-center py-10">Loading...</div>;
-    if (!clerkUser) return <div className="text-center py-10">Please log in to view dashboard.</div>;
+    if (!isLoaded) return <div className="flex min-h-[40vh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" /></div>;
+    if (!clerkUser) return <div className="container-main py-12 text-center text-muted-foreground">Please sign in to view your dashboard.</div>;
+
+    const stats = [
+        { label: 'Total products', value: products.length, icon: Package, className: 'text-primary' },
+        { label: 'Total sales', value: '$0.00', icon: DollarSign, className: 'text-emerald-600' },
+        { label: 'Orders', value: '0', icon: ShoppingBag, className: 'text-violet-600' },
+    ];
 
     return (
-        <div className="max-w-7xl mx-auto py-8 px-4">
-            <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900">Seller Dashboard</h2>
-                <button
-                    onClick={() => setShowForm(true)}
-                    className="bg-green-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 hover:bg-green-700"
-                >
-                    <Plus size={20} />
-                    <span>Add Product</span>
-                </button>
+        <div className="container-main section-padding">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Seller dashboard</h1>
+                <Button onClick={() => setShowForm(true)} className="shrink-0 gap-2 bg-primary text-primary-foreground hover:opacity-90">
+                    <Plus size={18} />
+                    Add product
+                </Button>
             </div>
 
-            {/* Stats Cards (Placeholder) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 className="text-gray-500 text-sm font-medium uppercase">Total Products</h3>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">{products.length}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 className="text-gray-500 text-sm font-medium uppercase">Total Sales</h3>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">$0.00</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 className="text-gray-500 text-sm font-medium uppercase">Orders</h3>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">0</p>
-                </div>
+            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+                {stats.map((s) => (
+                    <Card key={s.label} className="border-border shadow-sm">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium uppercase tracking-wide text-muted-foreground">{s.label}</CardTitle>
+                            <s.icon className={cn('h-5 w-5', s.className)} />
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-2xl font-bold text-foreground">{s.value}</p>
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
 
-            {/* Products Table */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+            <Card className="overflow-hidden border-border shadow-sm">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                            <TableHead className="text-foreground">Product</TableHead>
+                            <TableHead className="text-foreground">Price</TableHead>
+                            <TableHead className="text-foreground">Category</TableHead>
+                            <TableHead className="text-foreground">Stock</TableHead>
+                            <TableHead className="text-right text-foreground">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {loading ? (
-                            <tr><td colSpan="5" className="px-6 py-4 text-center">Loading...</td></tr>
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Loading…</TableCell>
+                            </TableRow>
                         ) : products.length === 0 ? (
-                            <tr><td colSpan="5" className="px-6 py-4 text-center text-gray-500">No products found. Start selling!</td></tr>
+                            <TableRow>
+                                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">No products yet. Add your first product to start selling.</TableCell>
+                            </TableRow>
                         ) : (
                             products.map(product => (
-                                <tr key={product._id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <div className="flex-shrink-0 h-10 w-10">
-                                                <img className="h-10 w-10 rounded-full object-cover" src={product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/150'} alt="" />
-                                            </div>
-                                            <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">{product.title}</div>
-                                                <div className="text-sm text-gray-500">{product.brand}</div>
+                                <TableRow key={product._id} className="hover:bg-muted/30">
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <img
+                                                src={product.images?.[0] || 'https://via.placeholder.com/150'}
+                                                alt=""
+                                                className="h-11 w-11 shrink-0 rounded-lg object-cover"
+                                            />
+                                            <div>
+                                                <div className="font-medium text-foreground">{product.title}</div>
+                                                <div className="text-xs text-muted-foreground">{product.brand}</div>
                                             </div>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${product.price}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.category}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.stock}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button className="text-indigo-600 hover:text-indigo-900 mr-4"><Edit size={18} /></button>
-                                        <button onClick={() => handleDelete(product._id)} className="text-red-600 hover:text-red-900"><Trash2 size={18} /></button>
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                    <TableCell className="font-medium">${product.price}</TableCell>
+                                    <TableCell><Badge variant="secondary" className="text-xs">{product.category}</Badge></TableCell>
+                                    <TableCell>
+                                        <Badge variant={product.stock > 0 ? 'secondary' : 'destructive'} className="text-xs">
+                                            {product.stock} left
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10 mr-1">
+                                            <Edit size={16} />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(product._id)}>
+                                            <Trash2 size={16} />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
                             ))
                         )}
-                    </tbody>
-                </table>
-            </div>
+                    </TableBody>
+                </Table>
+            </Card>
 
             {showForm && <ProductForm onClose={() => setShowForm(false)} />}
         </div>
