@@ -8,21 +8,26 @@ import axios from 'axios';
 const ProductForm = ({ onClose }) => {
     const dispatch = useDispatch();
     const [generating, setGenerating] = useState(false);
+    const [optimizing, setOptimizing] = useState(false);
+    const [priceNote, setPriceNote] = useState('');
     const [formData, setFormData] = useState({
         title: '',
         price: '',
         description: '',
         images: '',
-        category: 'Electronics',
+        category: 'Fashion',
         brand: '',
         stock: ''
     });
+
+    const categories = ["Fashion", "Electronics", "Home & Kitchen", "Beauty & Personal Care", "Books", "Sports & Outdoors", "Toys & Games", "Collectibles"];
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleGenerateDescription = async () => {
+        if (!formData.title) return;
         setGenerating(true);
         try {
             const { data } = await axios.post('/api/ai/description', {
@@ -36,6 +41,29 @@ const ProductForm = ({ onClose }) => {
             alert('Failed to generate description');
         } finally {
             setGenerating(false);
+        }
+    };
+
+    const handleOptimizePrice = async () => {
+        if (!formData.title || !formData.category) {
+            alert('Please enter a title and category first');
+            return;
+        }
+        setOptimizing(true);
+        try {
+            const { data } = await axios.post('/api/ai/price-optimization', {
+                title: formData.title,
+                category: formData.category,
+                brand: formData.brand,
+                description: formData.description
+            });
+            setFormData(prev => ({ ...prev, price: data.recommendedPrice.toString() }));
+            setPriceNote(`AI suggests: ₹${data.minPrice} - ₹${data.maxPrice}. ${data.reason}`);
+        } catch (err) {
+            console.error(err);
+            alert('Failed to get price suggestion');
+        } finally {
+            setOptimizing(false);
         }
     };
 
@@ -64,11 +92,23 @@ const ProductForm = ({ onClose }) => {
                     </div>
                     <div className="flex gap-4">
                         <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700">Price ($)</label>
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="block text-sm font-medium text-gray-700">Price (₹)</label>
+                                <button
+                                    type="button"
+                                    onClick={handleOptimizePrice}
+                                    disabled={optimizing || !formData.title}
+                                    className="text-indigo-600 text-xs flex items-center hover:text-indigo-800 disabled:opacity-50"
+                                >
+                                    {optimizing ? <Loader size={12} className="animate-spin mr-1" /> : <Sparkles size={12} className="mr-1" />}
+                                    AI Suggest
+                                </button>
+                            </div>
                             <input type="number" name="price" value={formData.price} required className="mt-1 block w-full border border-gray-300 rounded-md p-2" onChange={handleChange} />
+                            {priceNote && <p className="text-[10px] text-indigo-500 mt-1 leading-tight">{priceNote}</p>}
                         </div>
                         <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700">Stock</label>
+                            <label className="block text-sm font-medium text-gray-700 mt-5">Stock</label>
                             <input type="number" name="stock" value={formData.stock} required className="mt-1 block w-full border border-gray-300 rounded-md p-2" onChange={handleChange} />
                         </div>
                     </div>
@@ -79,7 +119,17 @@ const ProductForm = ({ onClose }) => {
                     <div className="flex gap-4">
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700">Category</label>
-                            <input type="text" name="category" value={formData.category} required className="mt-1 block w-full border border-gray-300 rounded-md p-2" onChange={handleChange} />
+                            <select
+                                name="category"
+                                value={formData.category}
+                                required
+                                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                                onChange={handleChange}
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-gray-700">Brand</label>

@@ -39,6 +39,28 @@ export const addComment = createAsyncThunk('posts/addComment', async ({ postId, 
     }
 });
 
+export const deletePost = createAsyncThunk('posts/deletePost', async ({ id, token }, { rejectWithValue }) => {
+    try {
+        await axios.delete(`/api/posts/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return id;
+    } catch (err) {
+        return rejectWithValue(err.response.data);
+    }
+});
+
+export const deleteAllPosts = createAsyncThunk('posts/deleteAllPosts', async (token, { rejectWithValue }) => {
+    try {
+        const res = await axios.delete('/api/posts/all', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return res.data; // Now returns { deletedIds, msg }
+    } catch (err) {
+        return rejectWithValue(err.response.data);
+    }
+});
+
 const initialState = {
     posts: [],
     post: null,
@@ -87,6 +109,22 @@ const postSlice = createSlice({
                 state.posts = state.posts.map(post =>
                     post._id === action.payload.postId ? { ...post, comments: action.payload.comments } : post
                 );
+            })
+            .addCase(deletePost.fulfilled, (state, action) => {
+                state.posts = state.posts.filter(post => post._id !== action.payload);
+            })
+            .addCase(deleteAllPosts.fulfilled, (state, action) => {
+                const deletedIds = action.payload.deletedIds || [];
+                if (deletedIds.length > 0) {
+                    state.posts = state.posts.filter(p => !deletedIds.includes(p._id));
+                } else {
+                    // Fallback to clearing all if no IDs returned (backward compatibility)
+                    state.posts = [];
+                }
+                state.error = null;
+            })
+            .addCase(deleteAllPosts.rejected, (state, action) => {
+                state.error = action.payload?.msg || 'Failed to delete all posts';
             });
     }
 });

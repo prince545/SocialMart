@@ -20,6 +20,10 @@ const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
 const Chat = lazy(() => import('./pages/Chat'));
 const Orders = lazy(() => import('./pages/Orders'));
 const OrderDetails = lazy(() => import('./pages/OrderDetails'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const About = lazy(() => import('./pages/About'));
+
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
     const { getToken } = useAuth();
@@ -42,7 +46,10 @@ function App() {
 
     return (
         <Router>
-            <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+            <ScrollToTop />
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 text-gray-900 font-sans flex flex-col relative">
+                <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.05),transparent_50%)] pointer-events-none"></div>
+                <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-40"></div>
                 <Navbar />
                 <main className="flex-grow">
                     <Suspense fallback={<Loading />}>
@@ -60,6 +67,8 @@ function App() {
                             <Route path="/register" element={<Register />} />
                             <Route path="/orders" element={<Orders />} />
                             <Route path="/order/:id" element={<OrderDetails />} />
+                            <Route path="/wishlist" element={<Wishlist />} />
+                            <Route path="/about" element={<About />} />
                         </Routes>
                     </Suspense>
                 </main>

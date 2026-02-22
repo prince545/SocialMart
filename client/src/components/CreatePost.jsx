@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
-const CreatePost = () => {
+const CreatePost = ({ onClose }) => {
     const [caption, setCaption] = useState('');
     const [imageUrl, setImageUrl] = useState('');       // final URL saved to DB
     const [imagePreview, setImagePreview] = useState(''); // preview src
@@ -123,10 +123,11 @@ const CreatePost = () => {
         setUrlInput('');
         setTaggedProduct('none');
         if (fileInputRef.current) fileInputRef.current.value = '';
+        if (onClose) onClose();
     };
 
     return (
-        <Card className="border-gray-100 shadow-sm hover:shadow-md transition-shadow mb-6">
+        <Card className="bg-white rounded-2xl shadow-lg border border-gray-200 mb-6">
             <CardContent className="p-4">
                 {/* Header row */}
                 <div className="flex items-start space-x-3 mb-4">
@@ -139,7 +140,7 @@ const CreatePost = () => {
                     <div className="flex-1">
                         <div className="relative">
                             <Textarea
-                                className="bg-gray-50 border-gray-200 resize-none pr-10 text-gray-800 placeholder-gray-400 focus:bg-white"
+                                className="bg-gray-50 border-gray-200 resize-none pr-10 pb-10 text-gray-800 placeholder-gray-400 focus:bg-white"
                                 rows={2}
                                 placeholder={`What's on your mind, ${clerkUser?.firstName || 'User'}?`}
                                 value={caption}
@@ -151,7 +152,7 @@ const CreatePost = () => {
                                 size="icon"
                                 onClick={handleGenerateCaption}
                                 disabled={generating || !imagePreview}
-                                className="absolute right-1 top-1 w-7 h-7 text-purple-500 hover:text-purple-700 hover:bg-purple-50 disabled:opacity-30"
+                                className="absolute right-2 bottom-2 w-7 h-7 text-purple-500 hover:text-purple-700 hover:bg-purple-50 disabled:opacity-30"
                                 title="Generate AI Caption"
                             >
                                 {generating ? <Loader size={16} className="animate-spin" /> : <Sparkles size={16} />}

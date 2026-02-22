@@ -71,7 +71,7 @@ const RecommendationWidget = () => {
                         />
                         <div className="min-w-0">
                             <h4 className="text-sm font-semibold text-gray-800 group-hover:text-indigo-600 line-clamp-2 transition-colors">{product.title}</h4>
-                            <p className="text-xs text-indigo-600 font-bold mt-0.5">${product.price}</p>
+                            <p className="text-xs text-indigo-600 font-bold mt-0.5">₹{product.price}</p>
                         </div>
                     </Link>
                 ))}

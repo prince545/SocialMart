@@ -14,7 +14,7 @@ exports.getMessages = async (req, res) => {
                 { sender: myId, receiver: userId },
                 { sender: userId, receiver: myId }
             ]
-        }).sort({ createdAt: 1 });
+        }).sort({ createdAt: 1 }).populate('sharedPost');
 
         res.json(messages);
     } catch (err) {
@@ -33,15 +33,16 @@ exports.sendMessage = async (req, res) => {
         const newMessage = new Message({
             sender: req.user.id,
             receiver: receiverId,
-            content
+            content,
+            sharedPost: req.body.sharedPostId || null
         });
 
         const savedMessage = await newMessage.save();
 
-        // Populate sender/receiver info if needed, or just return as is
-        // const populatedMessage = await savedMessage.populate('sender', 'name image').populate('receiver', 'name image').execPopulate();
+        // Populate the sharedPost for the frontend to render immediately
+        const populatedMessage = await Message.findById(savedMessage._id).populate('sharedPost');
 
-        res.status(201).json(savedMessage);
+        res.status(201).json(populatedMessage);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

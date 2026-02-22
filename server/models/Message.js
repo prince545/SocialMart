@@ -16,6 +16,10 @@ const MessageSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    sharedPost: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post'
+    },
     read: {
         type: Boolean,
         default: false

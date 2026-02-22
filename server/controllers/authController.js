@@ -69,3 +69,16 @@ exports.getAllUsers = async (req, res) => {
         res.status(500).send('Server Error');
     }
 };
+
+// @route   GET api/auth/me
+// @desc    Get current user MongoDB ID
+// @access  Private
+exports.getCurrentUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('_id username avatar clerkId');
+        res.json({ _id: user._id, username: user.username, avatar: user.avatar, clerkId: user.clerkId });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};

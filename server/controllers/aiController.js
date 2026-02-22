@@ -6,7 +6,7 @@ const http = require('http');
 
 // Initialize Gemini with new SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const MODEL_NAME = "gemini-2.5-flash";
+const MODEL_NAME = "gemini-2.0-flash";
 
 // Helper: fetch remote image as base64
 function fetchImageAsBase64(url) {
@@ -143,7 +143,7 @@ exports.generateSocialPost = async (req, res) => {
         const title = product.title || "Amazing Product";
         const price = product.price || "Check it out";
 
-        const prompt = `Create a promotional social media post for a product named "${title}" priced at $${price}. 
+        const prompt = `Create a promotional social media post for a product named "${title}" priced at ₹${price}. 
         Use an exciting tone, include emojis, and call to action. 3 variations.`;
 
         const response = await ai.models.generateContent({
@@ -193,9 +193,142 @@ exports.moderateContentHeader = async (req, res) => {
     }
 };
 
-exports.checkModeration = (text) => {
-    const safeText = (text || '').toLowerCase();
-    const badWords = ['spam', 'hate', 'badword', 'offensive'];
-    const found = badWords.find(w => safeText.includes(w));
-    return found ? { flagged: true, reason: `Contains inappropriate word: ${found}` } : { flagged: false };
+exports.checkModeration = async (text) => {
+    try {
+        if (!text || text.length < 5) return { flagged: false };
+
+        const prompt = `Classify the following text as 'SAFE' or 'UNSAFE' based on ecommerce community guidelines (no hate speech, spam, harassment, or explicit content). 
+        Text: "${text}". 
+        Respond ONLY with JSON: { "flagged": boolean, "reason": "string" }.`;
+
+        const response = await ai.getGenerativeModel({ model: MODEL_NAME }).generateContent(prompt);
+        let textResult = response.response.text();
+
+        // Clean up markdown code blocks if present
+        textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        const jsonResult = JSON.parse(textResult);
+        return jsonResult;
+    } catch (err) {
+        console.error("Gemini Moderation Error:", err);
+        // Fallback to basic local check
+        const safeText = (text || '').toLowerCase();
+        const badWords = ['spam', 'hate', 'badword', 'offensive', 'scam', 'fraud'];
+        const found = badWords.find(w => safeText.includes(w));
+        return found ? { flagged: true, reason: `Contains inappropriate word: ${found}` } : { flagged: false };
+    }
+};
+
+// @route   POST api/ai/suggest-chat
+// @desc    Suggest a reply based on chat history
+// @access  Private
+exports.suggestChatReply = async (req, res) => {
+    try {
+        const { messages, context } = req.body;
+
+        const historyStr = messages
+            .slice(-10) // Last 10 messages
+            .map(m => `${m.senderModel === 'User' ? 'Other' : 'Me'}: ${m.text}`)
+            .join('\n');
+
+        const prompt = `You are a helpful assistant in a social commerce app called SocialMart. 
+        Based on this chat history, suggest a natural, short reply for 'Me'.
+        History:
+        ${historyStr}
+        
+        Context: ${context || 'General chat'}
+        
+        Respond ONLY with a single sentence suggestion.`;
+
+        const response = await ai.getGenerativeModel({ model: MODEL_NAME }).generateContent(prompt);
+        const suggestion = response.response.text();
+
+        res.json({ suggestion: suggestion.trim() });
+    } catch (err) {
+        console.error("Gemini Suggest Error:", err);
+        res.status(500).json({ error: 'AI suggestion failed' });
+    }
+};
+
+// @route   POST api/ai/search-intent
+// @desc    Translate natural language to search filters
+// @access  Public
+exports.getSearchIntent = async (req, res) => {
+    try {
+        const { query } = req.body;
+
+        const prompt = `Translate this user search query into a JSON filter object for an ecommerce app.
+        Query: "${query}"
+        
+        Available fields: keyword, category, minPrice, maxPrice, brand, sort (newest, price-low, price-high).
+        
+        Respond ONLY with a valid JSON object.
+        Example: "cheap blue sneakers" -> { "keyword": "sneakers", "maxPrice": 500, "color": "blue" }`;
+
+        const response = await ai.getGenerativeModel({ model: MODEL_NAME }).generateContent(prompt);
+        let textResult = response.response.text();
+        textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        const jsonResult = JSON.parse(textResult);
+        res.json(jsonResult);
+    } catch (err) {
+        console.error("Gemini Search Intent Error:", err);
+        res.json({ keyword: query }); // Fallback to simple keyword
+    }
+};
+
+// @route   POST api/ai/summarize-reviews
+// @desc    Summarize product reviews
+// @access  Public
+exports.summarizeReviews = async (req, res) => {
+    try {
+        const { reviews, productTitle } = req.body;
+
+        if (!reviews || reviews.length === 0) {
+            return res.json({ summary: "No reviews to summarize yet." });
+        }
+
+        const reviewsText = reviews.map(r => `Rating: ${r.rating}/5, Comment: ${r.comment}`).join('\n---\n');
+
+        const prompt = `Summarize these customer reviews for the product "${productTitle}". 
+        Be concise, highlight the pros and cons, and mention the overall sentiment. 
+        Keep it under 3-4 bullet points.
+        Reviews:
+        ${reviewsText}`;
+
+        const response = await ai.getGenerativeModel({ model: MODEL_NAME }).generateContent(prompt);
+        const summary = response.response.text();
+
+        res.json({ summary: summary.trim() });
+    } catch (err) {
+        console.error("Gemini Summary Error:", err);
+        res.status(500).json({ error: 'AI summarization failed' });
+    }
+};
+
+// @route   POST api/ai/price-optimization
+// @desc    Get AI price suggestion for a product
+// @access  Public
+exports.getPriceOptimization = async (req, res) => {
+    try {
+        const { title, category, brand, description } = req.body;
+
+        const prompt = `Based on these product details, suggest an optimal, competitive price range (Min and Max INR/Rupees) and a recommended "sweet spot" price.
+        Product: ${title}
+        Category: ${category}
+        Brand: ${brand || 'Unknown'}
+        Description: ${description || 'N/A'}
+        
+        Respond ONLY with JSON: { "minPrice": number, "maxPrice": number, "recommendedPrice": number, "reason": "string" }.`;
+
+        const response = await ai.getGenerativeModel({ model: MODEL_NAME }).generateContent(prompt);
+        let textResult = response.response.text();
+        textResult = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        const jsonResult = JSON.parse(textResult);
+        res.json(jsonResult);
+    } catch (err) {
+        console.error("Gemini Price optimization Error:", err);
+        res.status(500).json({ error: 'AI price optimization failed' });
+    }
 };
